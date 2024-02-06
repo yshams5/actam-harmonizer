@@ -1,0 +1,74 @@
+<!-- Piano roll -->
+<html>
+<link rel="stylesheet" href="test.css">
+
+<body>
+  <h1>Melody Harmoniser</h1>
+  <label for="tempo">Tempo: </label>
+  <input id="tempo" class="select-box select-box-small" type="number" minlength="2" maxlength="3" value="120"> </input>
+  <button id="tempoButton" class="btn-grad">Set</button>
+  <label for="key">Key: </label>
+  <select name="key" id="key" class="select-box">
+    <option value="0">C </option>
+    <option value="1">C#/Db</option>
+    <option value="2">D </option>
+    <option value="3">D#/Eb</option>
+    <option value="4">E </option>
+    <option value="5">F </option>
+    <option value="6">F#/Gb</option>
+    <option value="7">G </option>
+    <option value="8">G#/Ab</option>
+    <option value="9">A </option>
+    <option value="10">Bb </option>
+    <option value="11">B/Cb</option>
+  </select>
+
+  <label for="complexity">Complexity: </label>
+  <select name="complexity" id="complexity" class="select-box">
+    <option value="0">Level 1</option>
+    <option value="1">Level 2</option>
+    <option value="2">Level 3</option>
+    <option value="3">Level 4</option>
+    <option value="4">Level 5</option>
+  </select>
+
+  <p></p>
+  <p>OR</p>
+
+  <label for="presets">Browse Presets: </label>
+  <select name="presets" id="presets" class="select-box">
+    <option value="0">Hey Jude</option>
+    <option value="1">Never Gonna Give You Up</option>
+    <option value="2">Every Breath You Take</option>
+  </select>
+  <button id="setmml" class="btn-grad">Generate!</button>
+
+  <p></p>
+
+  <script src="https://g200kg.github.io/webaudio-pianoroll/webaudio-pianoroll.js">
+  </script>
+
+
+  <script type="module" src="test.js"></script>
+  <script type="module" src="Harmonizer.js">  </script>
+  <div class="centered-container">
+    <webaudio-pianoroll id="pianoroll" timebase="16" width="1300" height="400" colnote="#fc0000" collt="#F0EDCC"
+      coldk="#0A174E" colgrid="#000" wheelzoom="1" xscroll="1" yscroll="1" xrange="128" yrange="32" markend="64"
+      editmode="dragmono"></webaudio-pianoroll>
+  </div>
+  <p></p>
+
+  <button id="generate" class="btn-grad">Generate</button>
+  <button id="play" class="btn-grad">Play</button>
+  <button id="stop" class="btn-grad">Stop</button>
+  <button id="clear" class="btn-grad">Reset</button>
+
+  <p></p>
+
+  <div>
+    <canvas id="chord-grid-canvas" width="1250" height="400"></canvas>
+  </div>
+
+</body>
+
+</html>
