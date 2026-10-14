@@ -5,15 +5,20 @@ export default class Note {
     #value; // = midiValue%12 (0 to 11, C to B)
     #midiValue;
     #octave;
-    //#octave;
     constructor(midiValue) {
         this.#midiValue = midiValue;
-        this.#value = midiValue % 12;
+        this.#value = Note.mod12(midiValue);
         this.#octave = Math.floor(midiValue / 12) -1;
     }
-    
-    static setKey(value){
-        this.#key = new Note(value);
+
+    //always returns a pitch class between 0 and 11, also for negative numbers (-2 -> 10)
+    static mod12(n) {
+        return ((n % 12) + 12) % 12;
+    }
+
+    //accepts either a Note or a plain number
+    static setKey(key){
+        this.#key = key instanceof Note ? new Note(key.value) : new Note(key);
         this.sharpKey = this.#key.startsSharpKey();
     }
 
@@ -43,18 +48,19 @@ export default class Note {
     //transposes the note by a number of steps up or down by changing the note value
     transpose(steps, up = true) {
         this.#midiValue = (this.#midiValue  + ((steps) * (up ? 1 : -1)));
-        this.#value = (this.#midiValue+12) % 12;
+        this.#value = Note.mod12(this.#midiValue);
         this.#octave = Math.floor(this.#midiValue / 12) -1;
         return this; // Return the modified instance
     }
 
+    //returns a new note (pitch class only, octave is dropped) transposed by a number of steps
     getTransposed(steps,up=true){
         return new Note(this.#value).transpose(steps,up);
     }
 
 
     //handles enharmonic note names
-    getName(sharp=sharpKey) { 
+    getName(sharp=Note.sharpKey) {
         // Return the appropriate note name
         return sharp ? this.getSharpName() : this.getFlatName();
     }

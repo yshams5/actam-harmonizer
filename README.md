@@ -16,7 +16,7 @@ Output is an easy-to-read list of chords for each bar, ranked in order of suitab
 
 ### Piano Roll and MML 
 
-Piano roll is implemented using [webaudio-pianoroll]([https://github.com/g200kg/webaudio-pianoroll). webaudio-pianoroll is a GUI library for displaying piano rolls used in music applications. 
+Piano roll is implemented using [webaudio-pianoroll](https://github.com/g200kg/webaudio-pianoroll). webaudio-pianoroll is a GUI library for displaying piano rolls used in music applications. 
 The output from this pianoroll is by default stored in the form of Music Macro Language (MML). MML is a method of transcribing musical notation as sequence data, which then gets processed into binary performance data, akin to MIDI, for a computer to playback.
 
 MML can be decoded in the following way:
@@ -61,6 +61,12 @@ The notes and octaves are then converted into an integer using the formula
 
 *notevalue+12(octave+1)*
 
-where notevalue is 0 for c, 1 for d flat and so on, upto 12 for b.
+where notevalue is 0 for c, 1 for d flat and so on, up to 11 for b.
 
+## Tests
 
+The chord model and harmonizer logic (`Note.js`, `Chord.js`, `Harmonizer.js`) have unit tests that run with Node 18+ and no dependencies:
+
+```
+npm test
+```

@@ -20,6 +20,7 @@ export default class Chord {
     static tensionNoteScore = 0.5;
     static avoidNoteScore = 0.2;
     static outNoteScore = -1;
+    static progressionWeight = 0.1;   // score added per point of progression bonus (see Harmonizer.progressionBonus)
 
     #root;
     #type;
@@ -86,8 +87,9 @@ export default class Chord {
                 break;
         }
     }
-    static setKey(value){
-        Chord.key = new Note(value);
+    //accepts either a Note or a plain number (0 = C ... 11 = B)
+    static setKey(key){
+        Chord.key = key instanceof Note ? new Note(key.value) : new Note(key);
         Note.setKey(Chord.key);
     }
 
@@ -103,17 +105,30 @@ export default class Chord {
         return dominantChords.includes(this);
     }
 
+    isSubstituteDominant(){
+        return Object.values(SubstituteDominants).includes(this);
+    }
+
+    //true if the root of this chord is a perfect fifth below the root of the given chord (e.g. C is a fifth down from G)
     isFifthDownFrom(chord){
-        return ((chord.root.value + 12 - this.root.value) %12 == 7);
+        return Note.mod12(chord.root.value - this.root.value) === 7;
+    }
+
+    //true if the root of this chord is a half step below the root of the given chord (e.g. C is a half step down from Db)
+    isHalfStepDownFrom(chord){
+        return Note.mod12(chord.root.value - this.root.value) === 1;
     }
 
     resolvesTo(chord){
-        if(! this.isDominant()) { // for now only dominant chords resolve. later we can change this
-            return false; 
+        if(!chord || !this.isDominant()) { // for now only dominant chords resolve. later we can change this
+            return false;
         }
-        else if(Object.values(SubstituteDominants).includes(this)) {
-            return (this.root - chord.root === 1 ) || chord.isFifthDownFrom(this);
+        if(this.isSubstituteDominant()) {
+            // a tritone substitute resolves a half step down (Db7 -> C)
+            return chord.isHalfStepDownFrom(this);
         }
+        // a regular dominant resolves a fifth down (G7 -> C)
+        return chord.isFifthDownFrom(this);
     }
 
     //checks if a chord "allows" a set of notes by comparing the notes against the allowed scales
@@ -121,7 +136,7 @@ export default class Chord {
         let allowed = false;
     
         
-        let transposedNotes = notes.map(note => note.getTransposed(Chord.key + this.#root.value,false));
+        let transposedNotes = notes.map(note => note.getTransposed(Chord.key.value + this.#root.value,false));
         
         this.#scales.forEach(scale => {
             if (scale && scale.chord) {
@@ -145,16 +160,27 @@ export default class Chord {
         return [DiatonicChords.Imaj7 /* add I- chords */ ].includes(this);
     }
 
+    isDiatonic(){
+        return Object.values(DiatonicChords).includes(this);
+    }
 
+    //scores how well the chord fits the melody notes of one bar (roughly -1 to 1),
+    //plus progressionWeight for every point of progression bonus (e.g. resolution from the previous chord).
+    //the progression bonus is added on top of the melody fit so that it can break ties between chords that fit equally well
     calculateChordScore(melodyNotes, noteDurations,bonus = 0,lastBar = false) {
         
-        bonus += (Object.values(DiatonicChords).includes(this)?1:0) + (lastBar && this.isIChord()?1:0);
-        bonus *= 4;
+        const progression = bonus + (lastBar && this.isIChord()?1:0);
+        const diatonicBonus = this.isDiatonic() ? 4 : 0;   // diatonic chords count as if one extra beat of chord tones was played
         const scales = this.scales; 
+        // after this transposition every melody note is expressed relative to the chord root (root = 0)
         let transposedMelody = melodyNotes.map(note => note.getTransposed(Chord.key.value + this.#root.value,false));
 
         let totalWeightedScore = 0;
         let totalDuration = noteDurations.reduce((acc, duration) => acc + duration, 0);
+
+        if (totalDuration + diatonicBonus === 0) {
+            return 0; // empty bar (only rests) and no bonus: nothing to judge
+        }
     
         transposedMelody.forEach((melodyNote, index) => {
             let noteScore = Chord.outNoteScore;
@@ -162,8 +188,10 @@ export default class Chord {
             // Check each scale in the chord for a match
             scales.forEach(scale => {
                 if (scale.chord.some(chordNote => chordNote.value === melodyNote.value)) {
-                    if(Chord.chordToneScore> noteScore){noteScore = Chord.chordToneScore;}
-                    if(melodyNote.value === this.#root.value) {noteScore = Chord.rootNoteScore;}
+                    if(melodyNote.value === 0) {
+                        // the root is a chord tone, but a less interesting melody note than the other chord tones
+                        if(Chord.rootNoteScore> noteScore){noteScore = Chord.rootNoteScore;}
+                    } else if(Chord.chordToneScore> noteScore){noteScore = Chord.chordToneScore;}
                 } else if (scale.tension.some(tensionNote => tensionNote.value === melodyNote.value)) {
                     if(Chord.tensionNoteScore> noteScore){noteScore = Chord.tensionNoteScore;}
                 } else if (scale.avoid.some(avoidNote => avoidNote.value === melodyNote.value)) {
@@ -174,10 +202,10 @@ export default class Chord {
             // Weight the score by the duration of the melody note
             totalWeightedScore += noteScore * noteDurations[index];
         });
-        let myScore =parseFloat(((totalWeightedScore + bonus)/ (totalDuration + bonus)).toFixed(3));
-        
+        const melodyFit = (totalWeightedScore + diatonicBonus) / (totalDuration + diatonicBonus);
+
         // Calculate the final score for the chord
-        return myScore;
+        return parseFloat((melodyFit + Chord.progressionWeight * progression).toFixed(3));
     }
     
     
@@ -186,7 +214,7 @@ export default class Chord {
 
     
     toString(){
-        let actualRoot = this.#root.getTransposed(Chord.key,true);
+        let actualRoot = this.#root.getTransposed(Chord.key.value,true);
         return actualRoot.toString() + this.#symbol;
     }
 }
@@ -204,8 +232,8 @@ export const ChordType = Object.freeze({
 	dom7s5:     { notes : Note.notesFactory([0,4,8,10]),   symbol: '+7'        },
 
 	m7:         { notes : Note.notesFactory([0,3,7,10]),   symbol: '-7'        },
-	mMaj7:      { notes : Note.notesFactory([0,4,7,11]),   symbol: '-\u0394'   },
-	m6:         { notes : Note.notesFactory([0,4,6,9]),    symbol: '-6'        },
+	mMaj7:      { notes : Note.notesFactory([0,3,7,11]),   symbol: '-\u0394'   },
+	m6:         { notes : Note.notesFactory([0,3,7,9]),    symbol: '-6'        },
 
 	m7b5:       { notes : Note.notesFactory([0,3,6,10]),   symbol: '\u03C6'    },  //\u03C6 is unicode for phi
 	dim7:       { notes : Note.notesFactory([0,3,6,9]),    symbol: '\u00B07'  }    //\u00B0 is unicode for small circle
@@ -217,12 +245,12 @@ export const Scale = Object.freeze({
     ionian:     { chord: ChordType.Maj7.notes,    tension: Note.notesFactory([2,9]),     avoid: Note.notesFactory([5])  },
     dorian_m7:  { chord: ChordType.m7.notes,      tension: Note.notesFactory([2,5]),     avoid: Note.notesFactory([9])  },
     dorian_m6:  { chord: ChordType.m6.notes,      tension: Note.notesFactory([2,5,10]),  avoid: Note.notesFactory([])   },
-    phrygian:   { chord: ChordType.m7.notes,      tension: Note.notesFactory([2,5]),     avoid: Note.notesFactory([8])  },
+    phrygian:   { chord: ChordType.m7.notes,      tension: Note.notesFactory([5]),       avoid: Note.notesFactory([1,8])},
     lydian:     { chord: ChordType.Maj7.notes,    tension: Note.notesFactory([2,6,9]),   avoid: Note.notesFactory([])   },
     mixo:       { chord: ChordType.dom7.notes,    tension: Note.notesFactory([2,9]),     avoid: Note.notesFactory([5])  },
     mixo_sus:   { chord: ChordType.dom7sus4.notes,tension: Note.notesFactory([2,4,9]),   avoid: Note.notesFactory([])   },
     aeolian:    { chord: ChordType.m7.notes,      tension: Note.notesFactory([2,5]),     avoid: Note.notesFactory([8])  },
-    locrian:    { chord: ChordType.m7b5.notes,    tension: Note.notesFactory([5]),       avoid: Note.notesFactory([1,8])},
+    locrian:    { chord: ChordType.m7b5.notes,    tension: Note.notesFactory([5,8]),     avoid: Note.notesFactory([1])  },
 
     //dominant scales
     // first one is mixo, already defined in major scale modes                                                          //9,13
