@@ -8,60 +8,30 @@ This enables both advanced and amateur musicians to explore the magic of chords,
 
 Inputs from the user are:
 * Tempo
-* Key of the melody
+* Key of the melody (or "Auto", which detects it from the melody)
 * Required complexity of the chords
-* Melody input using a piano roll
+* The melody, entered with the mouse, the computer keyboard or a MIDI keyboard, or loaded from a preset
 
 Output is an easy-to-read list of chords for each bar, ranked in order of suitability, which dynamically updates based on the user selections.
 
-### Piano Roll and MML 
+Open `index.html` through any static web server (for example `python3 -m http.server`) since the scripts are ES modules. No build step or external libraries are needed.
 
-Piano roll is implemented using [webaudio-pianoroll](https://github.com/g200kg/webaudio-pianoroll). webaudio-pianoroll is a GUI library for displaying piano rolls used in music applications. 
-The output from this pianoroll is by default stored in the form of Music Macro Language (MML). MML is a method of transcribing musical notation as sequence data, which then gets processed into binary performance data, akin to MIDI, for a computer to playback.
+### Melody input
 
-MML can be decoded in the following way:
+The melody is stored as a list of note events, `{ pitch, start, duration }`: the pitch is a MIDI note number (60 = middle C), and start and duration are counted in 16th notes. This list (`input/MelodyModel.js`) is the single source of truth: every input method edits it, and the piano roll is drawn from it.
 
-* cdefgab — The letters a to g correspond to the musical pitches and cause the corresponding note to be played.
-* Black key notes are produced by appending a - with the next white key.
-* The length of a note is specified by appending a number representing its length as a fraction of a whole note and adding a dot(.) whenever it is a dotted note.
-* l — Followed by a number, specifies the default length used by notes or rests which do not explicitly define one.
-* r — A pause or rest. The length of the rest is specified in the same manner as the length of a note.
-* o — Followed by a number, o selects the octave the instrument will play in.
-* t — Followed by a number, sets the tempo in beats per minute.
+* **Piano roll** (`input/PianoRoll.js`): click the grid to add a note and drag to set its length, drag a note to move it, drag its right edge to resize it, right-click it (or select it and press Delete) to remove it. Click a piano key to hear it.
+* **Computer keyboard** (`input/stepEntry.js`): notes are typed one after another at the cursor (the yellow line, which can be moved by clicking the bar numbers). The keys `A S D F G H J K L ;` are the white keys and `W E T Y U O P` the black keys. `1`-`5` choose the length (16th to whole), `.` makes it dotted, `Space` adds a rest, `Backspace` deletes, `Z`/`X` change the octave, `Ctrl+Z` undoes.
+* **MIDI keyboard**: after pressing "Connect MIDI keyboard" (Chrome/Edge, Web MIDI), played notes are entered at the cursor like typed notes.
+* **Presets** (`input/presets.js`) are written in Music Macro Language and converted to note events by `parseMML`.
 
-An example of a 4 bar melody in MML: t120o4l8cr8.d16ro5c4r16o6a-8.
+The melody is monophonic: a note that overlaps the next one is shortened, and a note placed at the same position as another replaces it. The melody is remembered in the browser between visits.
 
-The tempo here is 120 (t120), starts on octave 4 (o4), default note length is 1/8 (l8). Breaking down the MML:
+Before harmonising, `toSequence` (`input/noteEvents.js`) converts the note events to the arrays the harmonizer uses: MIDI values and durations, where the gaps between notes become rests (-1). The harmonizer then splits them into bars of 16 steps.
 
+#### Key detection
 
-| Notation  | Note+Octave/Rest   | Note/Rest Value | 
-| :-------------: |:-------------:| :-----:|
-| c     | c4 | 8th |
-| r8  | rest      |  Dotted 8th |
-| d16 | d4     |    16th  |
-| r     | rest | 8th |
-| o  | default octave change to 5      |  -- |
-| c4 | c5     |    4th  |
-| r16     | rest | 16th |
-| o6  |   default octave change to 6     | -- |
-| a-8. | a6    |    Dotted 8th  |
-
-
-
-The key challenges in implementing the user input functionality was extracting the output from the piano roll according to our requirements. Since there is no delimiter in an MML string between notes/rests/octaves, 
-the presence (and sometimes absence) of alphabets, numbers and other special characters which contains rests, note, octave information all combined into one, made parsing the string tricky.
-Using conditional statements and regulax expressions such as slice, match and replace functions of javascript, the single MML string output was parsed and segmented into
-* Tempo
-* Notes
-* Rests
-* Durations of notes/rests
-* Octave
-
-The notes and octaves are then converted into an integer using the formula 
-
-*notevalue+12(octave+1)*
-
-where notevalue is 0 for c, 1 for d flat and so on, up to 11 for b.
+"Auto" key detection correlates how long each pitch class sounds in the melody with the Krumhansl-Kessler major key profile and picks the best matching major key. Minor melodies give their relative major, which is what the harmonizer expects. Short melodies that only use a few notes can be ambiguous (for example a melody on Db Eb F Ab fits both Db and Ab major); in that case choose the key by hand.
 
 ## Tests
 

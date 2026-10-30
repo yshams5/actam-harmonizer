@@ -1,74 +1,99 @@
-<!-- Piano roll -->
-<html>
-<link rel="stylesheet" href="test.css">
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Melody Harmoniser</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 
 <body>
   <h1>Melody Harmoniser</h1>
-  <label for="tempo">Tempo: </label>
-  <input id="tempo" class="select-box select-box-small" type="number" minlength="2" maxlength="3" value="120"> </input>
-  <button id="tempoButton" class="btn-grad">Set</button>
-  <label for="key">Key: </label>
-  <select name="key" id="key" class="select-box">
-    <option value="0">C </option>
-    <option value="1">C#/Db</option>
-    <option value="2">D </option>
-    <option value="3">D#/Eb</option>
-    <option value="4">E </option>
-    <option value="5">F </option>
-    <option value="6">F#/Gb</option>
-    <option value="7">G </option>
-    <option value="8">G#/Ab</option>
-    <option value="9">A </option>
-    <option value="10">Bb </option>
-    <option value="11">B/Cb</option>
-  </select>
 
-  <label for="complexity">Complexity: </label>
-  <select name="complexity" id="complexity" class="select-box">
-    <option value="0">Level 1</option>
-    <option value="1">Level 2</option>
-    <option value="2">Level 3</option>
-    <option value="3">Level 4</option>
-    <option value="4">Level 5</option>
-  </select>
+  <section class="controls">
+    <label>Tempo
+      <input id="tempo" class="select-box select-box-small" type="number" min="30" max="300" value="120">
+    </label>
+    <label>Key
+      <select id="key" class="select-box">
+        <option value="auto">Auto</option>
+        <option value="0">C</option>
+        <option value="1">C#/Db</option>
+        <option value="2">D</option>
+        <option value="3">D#/Eb</option>
+        <option value="4">E</option>
+        <option value="5">F</option>
+        <option value="6">F#/Gb</option>
+        <option value="7">G</option>
+        <option value="8">G#/Ab</option>
+        <option value="9">A</option>
+        <option value="10">Bb</option>
+        <option value="11">B/Cb</option>
+      </select>
+    </label>
+    <label>Complexity
+      <select id="complexity" class="select-box">
+        <option value="0">Level 1</option>
+        <option value="1">Level 2</option>
+        <option value="2">Level 3</option>
+        <option value="3">Level 4</option>
+        <option value="4">Level 5</option>
+      </select>
+    </label>
+    <span class="group">
+      <label for="presets">Preset</label>
+      <select id="presets" class="select-box"></select>
+      <button id="loadPreset" type="button">Load</button>
+    </span>
+  </section>
 
-  <p></p>
-  <p>OR</p>
+  <section class="editor">
+    <div class="toolbar">
+      <span class="group" id="lengths" aria-label="Note length"></span>
+      <button id="dot" type="button" title="Dotted note (key .)">dotted</button>
+      <span class="group">
+        Octave
+        <button id="octaveDown" type="button" title="Octave down (key Z)">&minus;</button>
+        <span id="octave">4</span>
+        <button id="octaveUp" type="button" title="Octave up (key X)">+</button>
+      </span>
+      <span class="group">
+        <button id="undo" type="button" title="Undo (Ctrl+Z)">Undo</button>
+        <button id="redo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
+        <button id="clear" type="button">Clear</button>
+      </span>
+      <button id="midi" type="button">Connect MIDI keyboard</button>
+    </div>
 
-  <label for="presets">Browse Presets: </label>
-  <select name="presets" id="presets" class="select-box">
-    <option value="0">Hey Jude</option>
-    <option value="1">Never Gonna Give You Up</option>
-    <option value="2">Every Breath You Take</option>
-  </select>
-  <button id="setmml" class="btn-grad">Generate!</button>
+    <div id="pianoroll"></div>
 
-  <p></p>
+    <p class="status" id="status" aria-live="polite"></p>
+    <details class="help">
+      <summary>How to enter a melody</summary>
+      <ul>
+        <li><b>Mouse:</b> click the grid to add a note, drag to set its length. Drag a note to move it, drag its right
+          edge to resize it. Right-click a note (or select it and press Delete) to remove it.</li>
+        <li><b>Computer keyboard:</b> keys <kbd>A</kbd>&ndash;<kbd>;</kbd> are the white keys and
+          <kbd>W E T Y U O P</kbd> the black keys. Notes are added at the cursor (the yellow line; click the bar numbers to
+          move it). <kbd>1</kbd>&ndash;<kbd>5</kbd> pick the length, <kbd>.</kbd> dotted, <kbd>Space</kbd> rest,
+          <kbd>Backspace</kbd> delete, <kbd>Z</kbd>/<kbd>X</kbd> octave, <kbd>&larr;</kbd>/<kbd>&rarr;</kbd> move the
+          cursor.</li>
+        <li><b>MIDI keyboard:</b> press Connect, then play notes. They are added at the cursor like typed notes.</li>
+      </ul>
+    </details>
+  </section>
 
-  <script src="https://g200kg.github.io/webaudio-pianoroll/webaudio-pianoroll.js">
-  </script>
+  <section class="output">
+    <button id="generate" type="button">Harmonise</button>
+    <button id="play" type="button">Play</button>
+    <button id="stop" type="button">Stop</button>
+    <div class="chord-grid">
+      <canvas id="chord-grid-canvas" width="1250" height="400"></canvas>
+    </div>
+  </section>
 
-
-  <script type="module" src="test.js"></script>
-  <script type="module" src="Harmonizer.js">  </script>
-  <div class="centered-container">
-    <webaudio-pianoroll id="pianoroll" timebase="16" width="1300" height="400" colnote="#fc0000" collt="#F0EDCC"
-      coldk="#0A174E" colgrid="#000" wheelzoom="1" xscroll="1" yscroll="1" xrange="128" yrange="32" markend="64"
-      editmode="dragmono"></webaudio-pianoroll>
-  </div>
-  <p></p>
-
-  <button id="generate" class="btn-grad">Generate</button>
-  <button id="play" class="btn-grad">Play</button>
-  <button id="stop" class="btn-grad">Stop</button>
-  <button id="clear" class="btn-grad">Reset</button>
-
-  <p></p>
-
-  <div>
-    <canvas id="chord-grid-canvas" width="1250" height="400"></canvas>
-  </div>
-
+  <script type="module" src="app.js"></script>
 </body>
 
 </html>

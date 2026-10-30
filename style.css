@@ -1,0 +1,191 @@
+:root {
+  --bg: rgb(14, 10, 42);
+  --surface: hsl(236, 32%, 26%);
+  --text: #ffffff;
+  --muted: #b9bbd9;
+  --accent: #3cefff;
+  --cursor: #ffd23f;
+
+  --roll-bg: #1b1740;
+  --roll-row-black: #141033;
+  --roll-line: #262257;
+  --roll-beat: #3a3678;
+  --roll-bar: #6c68b8;
+  --roll-ruler: #2d3058;
+  --roll-text: #d8d9f0;
+  --roll-note: #fc4a4a;
+  --roll-note-selected: #3cefff;
+  --roll-note-edge: rgba(0, 0, 0, 0.35);
+  --roll-note-text: #10102a;
+  --roll-ghost: rgba(252, 74, 74, 0.25);
+  --roll-cursor: var(--cursor);
+  --roll-key-white: #f0edcc;
+  --roll-key-black: #0a174e;
+  --roll-key-hover: #3cefff;
+  --roll-key-label: #0a174e;
+}
+
+body {
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-size: x-large;
+  background-color: var(--bg);
+  color: var(--text);
+  text-align: center;
+  margin: 0 auto;
+  padding: 0 16px 32px;
+  max-width: 1320px;
+}
+
+section {
+  margin: 16px 0;
+}
+
+.controls,
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.toolbar {
+  font-size: large;
+  margin-bottom: 8px;
+}
+
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.select-box {
+  border: none;
+  color: var(--text);
+  background-color: var(--surface);
+  font-size: inherit;
+  font-family: inherit;
+  text-align: center;
+  padding: 5px;
+  margin-left: 3px;
+}
+
+.select-box-small {
+  width: 80px;
+}
+
+button {
+  z-index: 1;
+  position: relative;
+  font-size: inherit;
+  font-family: inherit;
+  color: var(--text);
+  padding: 5px 10px;
+  border: none;
+  background-color: var(--surface);
+  overflow: hidden;
+  transition: color 0.4s ease-in-out;
+}
+
+button::before {
+  content: '';
+  z-index: -1;
+  position: absolute;
+  top: 100%;
+  left: 100%;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  background-color: var(--accent);
+  transform-origin: center;
+  transform: translate3d(-50%, -50%, 0) scale3d(0, 0, 0);
+  transition: transform 0.45s ease-in-out;
+}
+
+button:hover:not(:disabled) {
+  cursor: pointer;
+  color: #161616;
+}
+
+button:hover:not(:disabled)::before {
+  transform: translate3d(-50%, -50%, 0) scale3d(15, 15, 15);
+}
+
+button:focus-visible,
+.select-box:focus-visible,
+.roll:focus-visible {
+  outline: 2px solid var(--cursor);
+  outline-offset: 2px;
+}
+
+button.active {
+  background-color: var(--accent);
+  color: #161616;
+}
+
+button:disabled {
+  opacity: 0.4;
+}
+
+/* piano roll: the canvas stays in view (sticky) while the spacer gives the scroll size */
+.roll {
+  height: 420px;
+  overflow: auto;
+  border: 2px solid var(--surface);
+  background: var(--roll-bg);
+}
+
+.roll-spacer {
+  position: relative;
+}
+
+.roll-canvas {
+  position: sticky;
+  top: 0;
+  left: 0;
+  display: block;
+  touch-action: none;
+}
+
+.status {
+  color: var(--muted);
+  font-size: large;
+  margin: 8px 0;
+}
+
+.help {
+  font-size: medium;
+  text-align: left;
+  color: var(--muted);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.help summary {
+  cursor: pointer;
+  color: var(--text);
+}
+
+kbd {
+  border: 1px solid var(--muted);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-family: inherit;
+}
+
+.chord-grid {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+#chord-grid-canvas {
+  cursor: pointer;
+  display: block;
+  margin: 0 auto;
+}
+
+@media (max-width: 700px) {
+  body { font-size: large; }
+  .roll { height: 340px; }
+}
